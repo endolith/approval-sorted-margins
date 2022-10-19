@@ -30,7 +30,7 @@ def csvtoballots(filename, ftype=0):
             # Default filetype is scores:
             # First line is [weight,]<Comma-separated list of candidate names>
             # Subsequent lines are [weight,]<Comma-separated scores>
-  
+
             # Read the csv file's cnames to find number of candidates
 
             # First row is cnames
@@ -77,14 +77,14 @@ def csvtoballots(filename, ftype=0):
                 numballots += 1
                 nr = len(row)
                 for r in row:
-                    candset.add('{}'.format(r))
+                    candset.add(f'{r}')
 
-            nocountset = set(['overvote','undervote'])
+            nocountset = {'overvote', 'undervote'}
             candset -= nocountset
 
-            cnames = np.array(sorted([c for c in candset]))
+            cnames = np.array(sorted(list(candset)))
 
-            candindex = dict((c,i) for i, c in enumerate(cnames))
+            candindex = {c: i for i, c in enumerate(cnames)}
             ncands = len(cnames)
 
             ballots = np.zeros((numballots,ncands),dtype='int')
@@ -92,7 +92,7 @@ def csvtoballots(filename, ftype=0):
             top = next(reader)
             for row,b in zip(reader,ballots):
                 for j, r in enumerate(row):
-                    rr = '{}'.format(r)  # standardize quote formatting
+                    rr = f'{r}'
                     if rr not in nocountset:
                         b[candindex[rr]] = 5 - j
             weight = np.ones((len(ballots)),dtype=int)
@@ -102,16 +102,12 @@ def csvtoballots(filename, ftype=0):
 if __name__ == "__main__":
     import sys
 
-    if (len(sys.argv) == 2):
-        fname = sys.argv[1]
-    else:
-        fname = input("Enter csv filename: ")
-
+    fname = sys.argv[1] if (len(sys.argv) == 2) else input("Enter csv filename: ")
     ballots, weights, cnames = csvtoballots(fname)
 
     if len(cnames) == 0:
         cnames = np.array([str(i) for i in range(len(ballots[0]))])
 
-    print(" {}:".format("weight"),cnames)
+    print(' weight:', cnames)
     for w, ballot in zip(weights,ballots):
-        print("{}:".format(w),ballot)
+        print(f"{w}:", ballot)

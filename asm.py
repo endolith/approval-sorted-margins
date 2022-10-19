@@ -23,7 +23,7 @@ def asm(ballots, weight, cnames, cutoff=None, verbose=0):
     maxscore = int(ballots.max())
     maxscorep1 = maxscore + 1
 
-    if cutoff == None:
+    if cutoff is None:
         cutoff = (maxscore - 1) // 2
 
     minapprove = cutoff + 1
@@ -78,12 +78,15 @@ def test_asm(ballots,weight,cnames,cutoff=None,verbose=0):
     nbsmith = len(branking)
     approval_ranking = T.argsort()[::-1]
 
-    print("\nFull Pairwise Array, approval on diagonal, cutoff @ {}:".format(cutoff))
+    print(f"\nFull Pairwise Array, approval on diagonal, cutoff @ {cutoff}:")
     for row in A:
         print(row)
 
     if (nsmith > 1) and (nbsmith == 1):
-        print("\nApproval-only Pairwise Array, approval on diagonal, cutoff @ {}:".format(cutoff))
+        print(
+            f"\nApproval-only Pairwise Array, approval on diagonal, cutoff @ {cutoff}:"
+        )
+
         for row in B:
             print(row)
 
@@ -91,13 +94,13 @@ def test_asm(ballots,weight,cnames,cutoff=None,verbose=0):
     Margins = np.where((A.T>A),0,Margins)
 
     print("\nApproval rankings:")
-    print("\t{}".format(' > '.join([cnames[c] for c in approval_ranking])))
+    print(f"\t{' > '.join([cnames[c] for c in approval_ranking])}")
 
     print("\nSmith set, ranked by Approval Sorted Margins:")
-    print("\t{}".format(' > '.join([cnames[c] for c in ranking])))
+    print(f"\t{' > '.join([cnames[c] for c in ranking])}")
 
     print("\nSmith set for approved ratings only, ranked by approval:")
-    print("\t{}".format(' > '.join([cnames[c] for c in branking])))
+    print(f"\t{' > '.join([cnames[c] for c in branking])}")
 
     if nsmith > 1:
         print("\nApproval Sorted Margins pairwise results (on Smith Set):")
@@ -107,7 +110,7 @@ def test_asm(ballots,weight,cnames,cutoff=None,verbose=0):
             c_im1 = ranking[im1]
             cname_i = cnames[c_i]
             cname_im1 = cnames[c_im1]
-            print("\t{}>{}: {} > {}".format(cname_im1,cname_i,A[c_im1,c_i],A[c_i,c_im1]))
+            print(f"\t{cname_im1}>{cname_i}: {A[c_im1, c_i]} > {A[c_i, c_im1]}")
 
     print("\nASM Winner: ", cnames[winner])
 
@@ -135,7 +138,7 @@ def test_asm(ballots,weight,cnames,cutoff=None,verbose=0):
     sorted_margins(full_ranking,T,(A.T > A),cnames,verbose=verbose)
     winner = full_ranking[0]
     print("All candidates, ranked by Approval Sorted Margins:")
-    print("\t{}".format(' > '.join([cnames[c] for c in full_ranking])))
+    print(f"\t{' > '.join([cnames[c] for c in full_ranking])}")
     print("\nApproval Sorted Margins pairwise results for all candidates:")
     for i in range(1,ncands):
         im1 = i - 1
@@ -143,7 +146,7 @@ def test_asm(ballots,weight,cnames,cutoff=None,verbose=0):
         c_im1 = full_ranking[im1]
         cname_i = cnames[c_i]
         cname_im1 = cnames[c_im1]
-        print("\t{}>{}: {} > {}".format(cname_im1,cname_i,A[c_im1,c_i],A[c_i,c_im1]))
+        print(f"\t{cname_im1}>{cname_i}: {A[c_im1, c_i]} > {A[c_i, c_im1]}")
     print("-----")
 
     return
@@ -173,7 +176,7 @@ def main():
     # Figure out the width of the weight field, use it to create the format
     ff = '\t{{:{}d}}:'.format(int(log10(weight.max())) + 1)
 
-    print("Ballots:\n\t{}, {}".format('weight',','.join(cnames)))
+    print(f"Ballots:\n\tweight, {','.join(cnames)}")
     for ballot, w in zip(ballots,weight):
         print(ff.format(w),ballot)
 

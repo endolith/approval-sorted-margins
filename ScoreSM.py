@@ -28,10 +28,7 @@ def droopquota(n,m):
     return(n/(m+1))
 
 def myfmt(x):
-    if x > 1:
-        fmt = "{:." + "{}".format(int(log10(x))+5) + "g}"
-    else:
-        fmt = "{:.5g}"
+    fmt = "{:." + f"{int(log10(x)) + 5}" + "g}" if x > 1 else "{:.5g}"
     return fmt.format(x)
 
 def smith_from_losses(losses,cands):
@@ -66,7 +63,10 @@ def sorted_margins(ranking,metric,loss_array,cnames,verbose=0):
     if verbose > 1:
         print(". "*30)
         print("Showing Sorted Margin iterations, starting from seeded ranking:")
-        print('\t{}\n'.format(' > '.join(['{}:{}'.format(cnames[c],myfmt(metric[c])) for c in ranking])))
+        print(
+            f"\t{' > '.join([f'{cnames[c]}:{myfmt(metric[c])}' for c in ranking])}\n"
+        )
+
     while True:
         apprsort = metric[ranking]
         apprdiff = []
@@ -84,7 +84,7 @@ def sorted_margins(ranking,metric,loss_array,cnames,verbose=0):
                     mindiff = im1
                     mindiffval = apprdiff[-1]
         # terminate when no more pairs are out of order pairwise:
-        if (len(outoforder) == 0) or (mindiff == ncands):
+        if not outoforder or mindiff == ncands:
             break
 
         # Do the swap
@@ -97,10 +97,12 @@ def sorted_margins(ranking,metric,loss_array,cnames,verbose=0):
                 c_im1, c_i = pair
                 name_im1 = cnames[c_im1]
                 name_i = cnames[c_i]
-                print('\t{} < {}, margin = {}'.format(name_im1,name_i,myfmt(apprdiff[k])))
-            print('\nSwap #{}: swapping candidates {} and {} with minimum margin {}'.format(
-                  nswaps,cnames[ranking[mindiff]],cnames[ranking[mindiff+1]],myfmt(mindiffval)))
-            print('\t{}\n'.format(' > '.join([cnames[c] for c in ranking])))
+                print(f'\t{name_im1} < {name_i}, margin = {myfmt(apprdiff[k])}')
+            print(
+                f'\nSwap #{nswaps}: swapping candidates {cnames[ranking[mindiff]]} and {cnames[ranking[mindiff + 1]]} with minimum margin {myfmt(mindiffval)}'
+            )
+
+            print(f"\t{' > '.join([cnames[c] for c in ranking])}\n")
 
     if verbose > 0:
         smith = smith_from_losses(np.where(loss_array, 1, 0),np.arange(ncands))
@@ -126,19 +128,25 @@ def ScoreSM(Score,A,cnames,verbose=0):
         sw_name = cnames[sw]
         w_score = Score[w]
         sw_score = Score[sw]
-        print('[ScoreSM] Winner vs. Runner-up pairwise result: ',
-              '{}:{} >= {}:{}'.format(w_name,myfmt(A[w,ru]),
-                                      ru_name,myfmt(A[ru,w])))
+        print(
+            '[ScoreSM] Winner vs. Runner-up pairwise result: ',
+            f'{w_name}:{myfmt(A[w, ru])} >= {ru_name}:{myfmt(A[ru, w])}',
+        )
+
         if w == sw:
             print('[ScoreSM] Winner has highest score')
         else:
             if sw != ru:
-                print('[ScoreSM] Winner vs. highest Scorer, pairwise: ',
-                      '{}:{} >= {}:{}'.format(w_name,myfmt(A[w,sw]),
-                                              sw_name,myfmt(A[sw,w])))
-            print('[ScoreSM] Winner vs. highest Scorer, score: ',
-                  '{}:{} <= {}:{}'.format(w_name,myfmt(w_score),
-                                          sw_name,myfmt(sw_score)))
+                print(
+                    '[ScoreSM] Winner vs. highest Scorer, pairwise: ',
+                    f'{w_name}:{myfmt(A[w, sw])} >= {sw_name}:{myfmt(A[sw, w])}',
+                )
+
+            print(
+                '[ScoreSM] Winner vs. highest Scorer, score: ',
+                f'{w_name}:{myfmt(w_score)} <= {sw_name}:{myfmt(sw_score)}',
+            )
+
 
     return(ranking)
 
@@ -156,8 +164,6 @@ def ScoreSMQRV(ballots, weights, cnames, numseats, verbose=0, show_runnerup=Fals
 
     cands = np.arange(numcands)
 
-    winners = []
-
     maxscorep1 = maxscore + 1
 
     beta = np.arange(maxscorep1) / maxscore
@@ -166,6 +172,7 @@ def ScoreSMQRV(ballots, weights, cnames, numseats, verbose=0, show_runnerup=Fals
 
     factor_array = []
 
+    winners = []
     for seat in range(numseats+1):
 
         if verbose>0:
@@ -199,7 +206,7 @@ def ScoreSMQRV(ballots, weights, cnames, numseats, verbose=0, show_runnerup=Fals
             print("     [ " + " | ".join(cnames[cands]) + " ]")
             for c, row in zip(cnames[cands],A):
                 n = len(row)
-                print(" {} [ ".format(c),", ".join([myfmt(x) for x in row]),"]")
+                print(f" {c} [ ", ", ".join([myfmt(x) for x in row]), "]")
 
         # Determine the seat winner using sorted margins elimination:
         permranking = ScoreSM(Score,A,cnames[cands],verbose=verbose)
@@ -218,9 +225,9 @@ def ScoreSMQRV(ballots, weights, cnames, numseats, verbose=0, show_runnerup=Fals
 
         if verbose:
             if (seat < numseats):
-                print("\n-----------\n*** Seat {}: {}\n-----------\n".format(seat+1,cnames[winner]))
+                print(f"\n-----------\n*** Seat {seat + 1}: {cnames[winner]}\n-----------\n")
             else:
-                print("\n-----------\n*** Runner-up: {}\n-----------\n".format(cnames[winner]))
+                print(f"\n-----------\n*** Runner-up: {cnames[winner]}\n-----------\n")
 
         if (seat < numseats):
             winners += [winner]
@@ -230,9 +237,8 @@ def ScoreSMQRV(ballots, weights, cnames, numseats, verbose=0, show_runnerup=Fals
         # Scale weights by proportion of Winner's score that needs to be removed
         # NOTE:  fractions are adjusted to avoid division by maxscore as much as possible.
         winsum = Score[permwinner]
-        winsum_description = "\tWinner's score % before reweighting:  {}%".format(myfmt((winsum/
-                                                                                         maxscore/
-                                                                                         numvotes_orig)*100))
+        winsum_description = f"\tWinner's score % before reweighting:  {myfmt(winsum / maxscore / numvotes_orig * 100)}%"
+
         if verbose:
             print("Winner's normalized score: ", myfmt(winsum / maxscore))
 
@@ -273,30 +279,49 @@ def ScoreSMQRV(ballots, weights, cnames, numseats, verbose=0, show_runnerup=Fals
         factor_array.append(list(factors))
 
         if verbose:
-            print("Winner's votes per rating: ",
-                  (", ".join(["{}:{}".format(j,myfmt(f))
-                              for j, f in zip(scorerange[-1:0:-1],
-                                              S[-1:0:-1,permwinner])])))
+            print(
+                "Winner's votes per rating: ",
+                ", ".join(
+                    [
+                        f"{j}:{myfmt(f)}"
+                        for j, f in zip(
+                            scorerange[-1:0:-1], S[-1:0:-1, permwinner]
+                        )
+                    ]
+                ),
+            )
+
             print("After reweighting ballots:")
-            print("\tQuota:  {}%".format(myfmt(quota/numvotes_orig*100)))
+            print(f"\tQuota:  {myfmt(quota / numvotes_orig * 100)}%")
             print(winsum_description)
             if (v > 0):
-                print("\t*** Winner {}'s score below quota.".format(cnames[winner]))
-                print("\t*** Backup score:  {}%, after elevating rates >= {}".format(myfmt((winsum/
-                                                                                           maxscore/
-                                                                                           numvotes_orig)*100),v))
+                print(f"\t*** Winner {cnames[winner]}'s score below quota.")
+                print(
+                    f"\t*** Backup score:  {myfmt(winsum / maxscore / numvotes_orig * 100)}%, after elevating rates >= {v}"
+                )
+
             print("\tReweighting factor per rating:  ", end="")
             if (factor > 0):
-                print(", ".join(["{}:{}".format(j,myfmt(f))
-                                 for j, f in zip(scorerange[-1:0:-1],
-                                                 factors[-1:0:-1])]))
+                print(
+                    ", ".join(
+                        [
+                            f"{j}:{myfmt(f)}"
+                            for j, f in zip(
+                                scorerange[-1:0:-1], factors[-1:0:-1]
+                            )
+                        ]
+                    )
+                )
+
             else:
                 print(factor)
 
-            print("\tPercentage of vote remaining after reweighting:  {}%".format(myfmt((numvotes/
-                                                                                        numvotes_orig) * 100)))
+            print(
+                f"\tPercentage of vote remaining after reweighting:  {myfmt(numvotes / numvotes_orig * 100)}%"
+            )
+
             if seat == numseats:
-                print("\tSeat {} winner vs. Runner-up in Seat {} contest:".format(seat,seat))
+                print(f"\tSeat {seat} winner vs. Runner-up in Seat {seat} contest:")
                 w_name = cnames[winners[-1]]
                 r_name = cnames[winner]
                 w_votes = X_vs_Y[winner]
@@ -307,11 +332,7 @@ def ScoreSMQRV(ballots, weights, cnames, numseats, verbose=0, show_runnerup=Fals
                     comp_sign = "<"
                 else:
                     comp_sign = "=="
-                print("\t{}:{} {} {}:{}".format(w_name,
-                                                myfmt(w_votes),
-                                                comp_sign,
-                                                r_name,
-                                                myfmt(r_votes)))
+                print(f"\t{w_name}:{myfmt(w_votes)} {comp_sign} {r_name}:{myfmt(r_votes)}")
 
         if (not show_runnerup) and (numvotes <= (quota + numvotes_orig/1000.) ) :
             break
@@ -319,9 +340,16 @@ def ScoreSMQRV(ballots, weights, cnames, numseats, verbose=0, show_runnerup=Fals
     if verbose > 1 and numseats > 1:
         print("- "*30 + "\nReweighting factors for all seat winners:")
         for w, factors in zip(winners,factor_array):
-            print(" {} |".format(cnames[w]),
-                  ", ".join(["{}:{}".format(j,myfmt(f)) for j, f in zip(scorerange[1:],
-                                                                        factors[1:])]))
+            print(
+                f" {cnames[w]} |",
+                ", ".join(
+                    [
+                        f"{j}:{myfmt(f)}"
+                        for j, f in zip(scorerange[1:], factors[1:])
+                    ]
+                ),
+            )
+
 
     return(winners, runner_up)
 
@@ -359,7 +387,7 @@ def main():
         # Figure out the width of the weight field, use it to create the format
         ff = '\t{{:{}d}}:'.format(int(log10(weights.max())) + 1)
 
-        print("Ballots:\n\t{}, {}".format('weight',','.join(cnames)))
+        print(f"Ballots:\n\tweight, {','.join(cnames)}")
         for ballot, w in zip(ballots,weights):
             print(ff.format(w),ballot)
 
@@ -369,12 +397,12 @@ def main():
                                     show_runnerup=args.runnerup)
     print("- "*30)
 
-    if args.seats == 1:
-        winfmt = "1 winner"
-    else:
-        winfmt = "{} winners".format(args.seats)
+    winfmt = "1 winner" if args.seats == 1 else f"{args.seats} winners"
+    print(
+        f"\nScoreSMQRV returns {winfmt}:",
+        ", ".join([cnames[q] for q in winners]),
+    )
 
-    print("\nScoreSMQRV returns {}:".format(winfmt),", ".join([cnames[q] for q in winners]))
 
     if runner_up >= 0:
         print("Runner-up: ", cnames[runner_up])
